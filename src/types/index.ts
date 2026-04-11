@@ -131,6 +131,31 @@ export interface UserProfile {
   goals: string[];
 }
 
+// ─── Community Workouts ──────────────────────────────────────────────────────
+
+export interface CommunityExercise {
+  exerciseId: string;
+  exerciseName: string;
+  sets: number;
+  reps: string;          // "8-12", "5", "AMRAP"
+  notes?: string;
+}
+
+export interface CommunityWorkout {
+  id: string;
+  title: string;
+  description: string;
+  authorName: string;
+  authorId: string;      // Firebase anonymous UID
+  exercises: CommunityExercise[];
+  estimatedMinutes: number;
+  likes: number;
+  likedBy: string[];     // array of UIDs
+  tags: string[];
+  category: 'strength' | 'hypertrophy' | 'cardio' | 'custom';
+  createdAt: string;     // ISO string (stored as Firestore Timestamp, converted on read)
+}
+
 // ─── Navigation Types ────────────────────────────────────────────────────────
 
 export type RootStackParamList = {
@@ -138,13 +163,17 @@ export type RootStackParamList = {
   Main: undefined;
   ProgramDetail: { programId: string };
   ActiveWorkout: { programId: string; dayId: string; programName: string; dayName: string };
+  ActiveCommunityWorkout: { workout: CommunityWorkout };
   Paywall: { feature?: string };
   WorkoutComplete: { sessionId: string };
+  CreateWorkout: undefined;
+  CommunityWorkoutDetail: { workoutId: string };
 };
 
 export type TabParamList = {
   Home: undefined;
   Programs: undefined;
+  Community: undefined;
   History: undefined;
   Profile: undefined;
 };

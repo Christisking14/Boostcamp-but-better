@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Platform } from 'react-native';
+import { Platform } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -10,16 +10,20 @@ import { Colors } from '../theme';
 import { RootStackParamList, TabParamList } from '../types';
 import { useWorkoutStore } from '../store/workoutStore';
 
-// Screens
+// ── Screens ───────────────────────────────────────────────────────────────────
 import OnboardingScreen from '../screens/OnboardingScreen';
 import HomeScreen from '../screens/HomeScreen';
 import ProgramsScreen from '../screens/ProgramsScreen';
+import CommunityScreen from '../screens/CommunityScreen';
 import HistoryScreen from '../screens/HistoryScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import ProgramDetailScreen from '../screens/ProgramDetailScreen';
 import ActiveWorkoutScreen from '../screens/ActiveWorkoutScreen';
+import ActiveCommunityWorkoutScreen from '../screens/ActiveCommunityWorkoutScreen';
 import PaywallScreen from '../screens/PaywallScreen';
 import WorkoutCompleteScreen from '../screens/WorkoutCompleteScreen';
+import CreateWorkoutScreen from '../screens/CreateWorkoutScreen';
+import CommunityWorkoutDetailScreen from '../screens/CommunityWorkoutDetailScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
@@ -42,7 +46,7 @@ function TabNavigator() {
         tabBarActiveTintColor: Colors.accent,
         tabBarInactiveTintColor: Colors.textTertiary,
         tabBarLabelStyle: {
-          fontSize: 11,
+          fontSize: 10,
           fontWeight: '600',
           marginTop: 2,
         },
@@ -63,6 +67,15 @@ function TabNavigator() {
         options={{
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="barbell" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Community"
+        component={CommunityScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="people" size={size} color={color} />
           ),
         }}
       />
@@ -90,7 +103,7 @@ function TabNavigator() {
 
 export default function AppNavigator() {
   const hasCompletedOnboarding = useWorkoutStore(
-    (state) => state.user.hasCompletedOnboarding
+    (state) => state.user.hasCompletedOnboarding,
   );
 
   return (
@@ -123,45 +136,43 @@ export default function AppNavigator() {
       >
         <Stack.Screen name="Onboarding" component={OnboardingScreen} />
         <Stack.Screen name="Main" component={TabNavigator} />
-        <Stack.Screen
-          name="ProgramDetail"
-          component={ProgramDetailScreen}
-          options={{
-            gestureEnabled: true,
-            cardStyleInterpolator: ({ current, layouts }) => ({
-              cardStyle: {
-                transform: [
-                  {
-                    translateX: current.progress.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [layouts.screen.width, 0],
-                    }),
-                  },
-                ],
-              },
-            }),
-          }}
-        />
+
+        {/* Program screens */}
+        <Stack.Screen name="ProgramDetail" component={ProgramDetailScreen} />
+
+        {/* Workout screens */}
         <Stack.Screen
           name="ActiveWorkout"
           component={ActiveWorkoutScreen}
-          options={{
-            gestureEnabled: false,
-            presentation: 'modal',
-          }}
+          options={{ gestureEnabled: false, presentation: 'modal' }}
         />
         <Stack.Screen
-          name="Paywall"
-          component={PaywallScreen}
-          options={{ presentation: 'modal' }}
+          name="ActiveCommunityWorkout"
+          component={ActiveCommunityWorkoutScreen}
+          options={{ gestureEnabled: false, presentation: 'modal' }}
         />
         <Stack.Screen
           name="WorkoutComplete"
           component={WorkoutCompleteScreen}
-          options={{
-            gestureEnabled: false,
-            presentation: 'modal',
-          }}
+          options={{ gestureEnabled: false, presentation: 'modal' }}
+        />
+
+        {/* Community screens */}
+        <Stack.Screen
+          name="CreateWorkout"
+          component={CreateWorkoutScreen}
+          options={{ presentation: 'modal' }}
+        />
+        <Stack.Screen
+          name="CommunityWorkoutDetail"
+          component={CommunityWorkoutDetailScreen}
+        />
+
+        {/* Paywall */}
+        <Stack.Screen
+          name="Paywall"
+          component={PaywallScreen}
+          options={{ presentation: 'modal' }}
         />
       </Stack.Navigator>
     </NavigationContainer>
