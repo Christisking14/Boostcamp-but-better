@@ -128,7 +128,7 @@ export default function ProfileScreen() {
             icon="barbell"
             label="Current Program"
             value={currentProgram?.name ?? 'None selected'}
-            onPress={() => navigation.navigate('Programs')}
+            onPress={() => navigation.navigate('Main')}
           />
         </View>
 

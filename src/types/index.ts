@@ -23,32 +23,35 @@ export interface Exercise {
 // ─── Program Structure ───────────────────────────────────────────────────────
 
 export interface SetScheme {
-  reps: string;          // "5", "8-12", "AMRAP", "5+"
-  weightNote?: string;   // "45", "70% 1RM", "bodyweight"
-  rpe?: number;
+  reps: string;           // "5", "8-12", "AMRAP", "5+"
+  weightNote?: string;    // "45 lbs", "70% 1RM", "bodyweight"
+  rpe?: number;           // 1–10
   isAmrap?: boolean;
   restSeconds?: number;
+  isWarmup?: boolean;
 }
 
 export interface ProgramExercise {
   exerciseId: string;
   sets: SetScheme[];
   notes?: string;
-  supersetWith?: string; // exerciseId
+  supersetWith?: string;  // exerciseId of the exercise to superset with
 }
 
 export interface WorkoutDay {
   id: string;
-  name: string;         // "Day A", "Push", "Upper Body"
+  name: string;
   exercises: ProgramExercise[];
   isRestDay?: boolean;
   estimatedMinutes?: number;
+  notes?: string;
 }
 
 export interface ProgramWeek {
   weekNumber: number;
-  title?: string;       // "Deload Week", "Intensity Week"
+  title?: string;         // "Deload Week", "Volume Block", etc.
   days: WorkoutDay[];
+  isDeload?: boolean;
 }
 
 export interface Program {
@@ -58,27 +61,33 @@ export interface Program {
   description: string;
   level: DifficultyLevel;
   daysPerWeek: number;
-  duration: string;      // "8 weeks", "12 weeks", "Ongoing"
+  duration: string;
   category: ProgramCategory;
   isPremium: boolean;
   accentColor: string;
+  gradientColors?: [string, string];
   author: string;
+  authorCredentials?: string;
   tags: string[];
   weeks: ProgramWeek[];
   equipment: EquipmentType[];
+  goals?: string[];
 }
 
 // ─── Workout Session ─────────────────────────────────────────────────────────
+
+export type SetType = 'working' | 'warmup' | 'dropset' | 'backoff';
 
 export interface CompletedSet {
   exerciseId: string;
   exerciseName: string;
   setIndex: number;
+  setType: SetType;       // NEW
   reps: number;
-  weight: number;        // in user's preferred unit
-  rpe?: number;
+  weight: number;
+  rpe?: number;           // 1–10 Rate of Perceived Exertion
   notes?: string;
-  completedAt: string;   // ISO date string
+  completedAt: string;
 }
 
 export interface WorkoutSession {
@@ -92,8 +101,9 @@ export interface WorkoutSession {
   durationSeconds: number;
   completedSets: CompletedSet[];
   notes?: string;
+  bodyWeight?: number;    // bodyweight at time of session
   isComplete: boolean;
-  totalVolume: number;   // total weight × reps
+  totalVolume: number;
 }
 
 // ─── Progress & Stats ────────────────────────────────────────────────────────
@@ -103,7 +113,26 @@ export interface ExercisePR {
   exerciseName: string;
   weight: number;
   reps: number;
+  e1rm: number;           // estimated 1RM at time of PR
   achievedAt: string;
+}
+
+export interface E1RMDataPoint {
+  date: string;           // ISO string
+  e1rm: number;
+  weight: number;
+  reps: number;
+}
+
+export interface VolumeDataPoint {
+  date: string;
+  volume: number;         // total session volume
+  sessionCount: number;
+}
+
+export interface BodyweightEntry {
+  date: string;           // ISO date string YYYY-MM-DD
+  weight: number;         // in user's preferred unit
 }
 
 export interface WeeklyStats {
@@ -129,6 +158,8 @@ export interface UserProfile {
   hasCompletedOnboarding: boolean;
   joinedAt: string;
   goals: string[];
+  defaultRestSeconds: number;   // NEW — default rest timer
+  showRPE: boolean;             // NEW — toggle RPE column
 }
 
 // ─── Community Workouts ──────────────────────────────────────────────────────
@@ -137,7 +168,7 @@ export interface CommunityExercise {
   exerciseId: string;
   exerciseName: string;
   sets: number;
-  reps: string;          // "8-12", "5", "AMRAP"
+  reps: string;
   notes?: string;
 }
 
@@ -146,14 +177,20 @@ export interface CommunityWorkout {
   title: string;
   description: string;
   authorName: string;
-  authorId: string;      // Firebase anonymous UID
+  authorId: string;
   exercises: CommunityExercise[];
   estimatedMinutes: number;
   likes: number;
-  likedBy: string[];     // array of UIDs
+  likedBy: string[];
   tags: string[];
   category: 'strength' | 'hypertrophy' | 'cardio' | 'custom';
-  createdAt: string;     // ISO string (stored as Firestore Timestamp, converted on read)
+  createdAt: string;
+}
+
+// ─── Bodyweight tracking ─────────────────────────────────────────────────────
+
+export interface BodyweightLog {
+  entries: BodyweightEntry[];
 }
 
 // ─── Navigation Types ────────────────────────────────────────────────────────
@@ -168,12 +205,15 @@ export type RootStackParamList = {
   WorkoutComplete: { sessionId: string };
   CreateWorkout: undefined;
   CommunityWorkoutDetail: { workoutId: string };
+  ExerciseProgress: { exerciseId: string; exerciseName: string };
+  History: undefined;
+  Profile: undefined;
 };
 
 export type TabParamList = {
   Home: undefined;
   Programs: undefined;
   Community: undefined;
-  History: undefined;
-  Profile: undefined;
+  Progress: undefined;
+  Tools: undefined;
 };

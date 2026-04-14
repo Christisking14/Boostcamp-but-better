@@ -196,6 +196,7 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
             exerciseId: ex.exerciseId,
             exerciseName: ex.exerciseName,
             setIndex: ex.loggedSets.length - 1,
+            setType: 'working',
             reps,
             weight,
           });
@@ -220,6 +221,7 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
         exerciseId: ex.exerciseId,
         exerciseName: ex.exerciseName,
         setIndex: setIdx,
+        setType: 'working',
         reps,
         weight,
       });

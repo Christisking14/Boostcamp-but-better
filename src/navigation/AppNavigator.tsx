@@ -15,6 +15,8 @@ import OnboardingScreen from '../screens/OnboardingScreen';
 import HomeScreen from '../screens/HomeScreen';
 import ProgramsScreen from '../screens/ProgramsScreen';
 import CommunityScreen from '../screens/CommunityScreen';
+import ProgressScreen from '../screens/ProgressScreen';
+import ToolsScreen from '../screens/ToolsScreen';
 import HistoryScreen from '../screens/HistoryScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import ProgramDetailScreen from '../screens/ProgramDetailScreen';
@@ -80,20 +82,20 @@ function TabNavigator() {
         }}
       />
       <Tab.Screen
-        name="History"
-        component={HistoryScreen}
+        name="Progress"
+        component={ProgressScreen}
         options={{
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="calendar" size={size} color={color} />
+            <Ionicons name="trending-up" size={size} color={color} />
           ),
         }}
       />
       <Tab.Screen
-        name="Profile"
-        component={ProfileScreen}
+        name="Tools"
+        component={ToolsScreen}
         options={{
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person" size={size} color={color} />
+            <Ionicons name="calculator" size={size} color={color} />
           ),
         }}
       />
@@ -117,12 +119,6 @@ export default function AppNavigator() {
           text: Colors.textPrimary,
           border: Colors.border,
           notification: Colors.accent,
-        },
-        fonts: {
-          regular: { fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto', fontWeight: '400' },
-          medium: { fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto', fontWeight: '500' },
-          bold: { fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto', fontWeight: '700' },
-          heavy: { fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto', fontWeight: '900' },
         },
       }}
     >
@@ -167,6 +163,13 @@ export default function AppNavigator() {
           name="CommunityWorkoutDetail"
           component={CommunityWorkoutDetailScreen}
         />
+
+        {/* Profile / History accessible from any tab */}
+        <Stack.Screen name="History" component={HistoryScreen} />
+        <Stack.Screen name="Profile" component={ProfileScreen} />
+
+        {/* Progress detail */}
+        <Stack.Screen name="ExerciseProgress" component={ProgressScreen} />
 
         {/* Paywall */}
         <Stack.Screen

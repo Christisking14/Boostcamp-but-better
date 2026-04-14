@@ -368,8 +368,7 @@ function StepGoals({ selectedGoals, onToggleGoal }: StepGoalsProps) {
               {isSelected && (
                 <LinearGradient
                   colors={['rgba(255,107,53,0.18)', 'rgba(255,107,53,0.06)']}
-                  style={StyleSheet.absoluteFill}
-                  borderRadius={Radius.lg}
+                  style={[StyleSheet.absoluteFill, { borderRadius: Radius.lg }]}
                 />
               )}
               <View
@@ -443,8 +442,7 @@ function StepExperience({ selected, onSelect }: StepExperienceProps) {
                   colors={['rgba(255,107,53,0.15)', 'rgba(255,107,53,0.04)']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
-                  style={StyleSheet.absoluteFill}
-                  borderRadius={Radius.lg}
+                  style={[StyleSheet.absoluteFill, { borderRadius: Radius.lg }]}
                 />
               )}
               <View

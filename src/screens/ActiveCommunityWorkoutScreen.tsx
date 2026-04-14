@@ -166,6 +166,7 @@ export default function ActiveCommunityWorkoutScreen({ navigation, route }: Prop
       exerciseId: ex.exerciseId,
       exerciseName: ex.exerciseName,
       setIndex: ex.loggedSets.length - 1,
+      setType: 'working',
       reps,
       weight,
     });

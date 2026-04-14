@@ -3,10 +3,13 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
 import type {
+  BodyweightEntry,
   CompletedSet,
+  E1RMDataPoint,
   ExercisePR,
   UnitSystem,
   UserProfile,
+  VolumeDataPoint,
   WorkoutSession,
 } from '../types';
 import { calculateTotalVolume } from '../utils/calculations';
@@ -25,6 +28,8 @@ const DEFAULT_USER: UserProfile = {
   hasCompletedOnboarding: false,
   joinedAt: new Date().toISOString(),
   goals: [],
+  defaultRestSeconds: 90,
+  showRPE: true,
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -50,6 +55,7 @@ interface WorkoutState {
   sessions: WorkoutSession[];
   prs: ExercisePR[];
   activeSession: WorkoutSession | null;
+  bodyweightLog: BodyweightEntry[];
 }
 
 interface WorkoutActions {
@@ -58,6 +64,7 @@ interface WorkoutActions {
   setCurrentProgram(programId: string): void;
   setPremium(isPremium: boolean, expiresAt?: string): void;
   updateUser(updates: Partial<UserProfile>): void;
+  logBodyweight(weight: number, date?: string): void;
 
   // ── Session lifecycle ──────────────────────────────────────────────────────
   startWorkout(
@@ -77,6 +84,10 @@ interface WorkoutActions {
   getPRForExercise(exerciseId: string): ExercisePR | undefined;
   getTotalVolume(): number;
   getStreakDays(): number;
+  getVolumeByWeek(weeks: number): VolumeDataPoint[];
+  getE1RMHistory(exerciseId: string, count: number): E1RMDataPoint[];
+  getBodyweightHistory(days: number): BodyweightEntry[];
+  getMuscleGroupVolume(days?: number): Record<string, number>;
 }
 
 export type WorkoutStore = WorkoutState & WorkoutActions;
@@ -91,6 +102,7 @@ export const useWorkoutStore = create<WorkoutStore>()(
       sessions: [],
       prs: [],
       activeSession: null,
+      bodyweightLog: [],
 
       // ── User / onboarding ────────────────────────────────────────────────
 
@@ -267,6 +279,7 @@ export const useWorkoutStore = create<WorkoutStore>()(
               exerciseName: best.exerciseName,
               weight: best.weight,
               reps: best.reps,
+              e1rm: Math.round(best.weight * (1 + best.reps / 30)),
               achievedAt: now.toISOString(),
             };
             if (existingPRIdx === -1) {
@@ -363,17 +376,93 @@ export const useWorkoutStore = create<WorkoutStore>()(
 
         return streak;
       },
+
+      logBodyweight(weight, date) {
+        const entry: BodyweightEntry = {
+          date: date ?? new Date().toISOString().slice(0, 10),
+          weight,
+        };
+        set((state) => {
+          const filtered = state.bodyweightLog.filter((e) => e.date !== entry.date);
+          return { bodyweightLog: [...filtered, entry].sort((a, b) => a.date.localeCompare(b.date)) };
+        });
+        set((state) => ({ user: { ...state.user, bodyWeight: weight } }));
+      },
+
+      getBodyweightHistory(days) {
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - days);
+        return get().bodyweightLog.filter((e) => new Date(e.date) >= cutoff);
+      },
+
+      getVolumeByWeek(weeks) {
+        const result: VolumeDataPoint[] = [];
+        for (let i = weeks - 1; i >= 0; i--) {
+          const weekStart = getWeekStart(new Date());
+          weekStart.setDate(weekStart.getDate() - i * 7);
+          const weekEnd = new Date(weekStart);
+          weekEnd.setDate(weekEnd.getDate() + 7);
+          const weekSessions = get().sessions.filter((s) => {
+            if (!s.completedAt) return false;
+            const d = new Date(s.completedAt);
+            return d >= weekStart && d < weekEnd;
+          });
+          result.push({
+            date: weekStart.toISOString(),
+            volume: weekSessions.reduce((acc, s) => acc + s.totalVolume, 0),
+            sessionCount: weekSessions.length,
+          });
+        }
+        return result;
+      },
+
+      getE1RMHistory(exerciseId, count) {
+        const points: E1RMDataPoint[] = [];
+        const sessions = [...get().sessions].reverse(); // oldest first
+        for (const session of sessions) {
+          const sets = session.completedSets.filter(
+            (s) => s.exerciseId === exerciseId && s.setType === 'working' && s.reps > 0 && s.weight > 0,
+          );
+          if (sets.length === 0) continue;
+          const best = sets.reduce((prev, curr) => {
+            const e1 = curr.weight * (1 + curr.reps / 30);
+            const e2 = prev.weight * (1 + prev.reps / 30);
+            return e1 > e2 ? curr : prev;
+          });
+          const e1rm = Math.round(best.weight * (1 + best.reps / 30));
+          points.push({ date: session.completedAt ?? session.startedAt, e1rm, weight: best.weight, reps: best.reps });
+          if (points.length >= count) break;
+        }
+        return points;
+      },
+
+      getMuscleGroupVolume(days = 7) {
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - days);
+        const recent = get().sessions.filter(
+          (s) => s.completedAt && new Date(s.completedAt) >= cutoff,
+        );
+        const vol: Record<string, number> = {};
+        for (const session of recent) {
+          for (const set of session.completedSets) {
+            if (set.setType !== 'working') continue;
+            // Use exerciseId prefix as rough muscle group proxy
+            const key = set.exerciseName;
+            vol[key] = (vol[key] ?? 0) + set.weight * set.reps;
+          }
+        }
+        return vol;
+      },
     }),
     {
-      name: 'ironpath-workout-store',
+      name: 'ironpath-workout-store-v2',
       storage: createJSONStorage(() => AsyncStorage),
-      // Only persist durable state; activeSession is intentionally persisted
-      // so users can resume a workout after backgrounding the app.
       partialize: (state) => ({
         user: state.user,
         sessions: state.sessions,
         prs: state.prs,
         activeSession: state.activeSession,
+        bodyweightLog: state.bodyweightLog,
       }),
     },
   ),
